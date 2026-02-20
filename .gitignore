@@ -1,0 +1,6 @@
+venv
+.venv
+artifacts/
+__pycache__
+manuscript/
+.vscode
