@@ -22,7 +22,7 @@ Main layout:
 ```text
 .
 ├── data/
-│   └── data.xlsx              # raw Excel dataset (not versioned here)
+│   └── data.xlsx              # curated Excel dataset used by the pipeline
 ├── artifacts/
 │   ├── data/                  # cached processed dataframe with descriptors
 │   ├── feature_selection/
