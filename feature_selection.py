@@ -55,7 +55,102 @@ def make_outer_cv_splits(
         shuffle=True,
         random_state=SEED,
     )
-    return list(skf.split(X_cv, bins_cv))
+    return list(skf.split(X_cv, bins_cv.to_numpy()))
+
+
+def export_stage_counts(
+    X_cv: pd.DataFrame,
+    y_cv_log: pd.Series,
+    preprocessor: Pipeline,
+    outer_splits: List[Tuple[np.ndarray, np.ndarray]],
+    force_recompute: bool = False,
+) -> pd.DataFrame:
+    """
+    Export feature counts across preprocessing stages (global CV and per outer fold).
+
+    Stages tracked:
+    - initial
+    - after_drop_sparse
+    - after_ohe
+    - after_variance
+    - after_corr
+    """
+    FEAT_SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
+    out_csv = FEAT_SUMMARY_DIR / "stage_counts.csv"
+    out_json = FEAT_SUMMARY_DIR / "stage_counts_summary.json"
+
+    if out_csv.exists() and out_json.exists() and not force_recompute:
+        print('[Stage counts] Loaded existing stage_counts artifacts.')
+        return pd.read_csv(out_csv)
+
+    def _counts_from_fitted(preproc_fitted: Pipeline, n_initial: int) -> Dict[str, int]:
+        st = preproc_fitted.named_steps
+        n_drop = len(st['drop_sparse'].keep_cols_)
+        n_ohe = len(st['ohe'].get_feature_names_out())
+        n_var = len(st['var'].get_feature_names_out())
+        n_corr = len(st['corr'].keep_cols_)
+        return {
+            'initial': int(n_initial),
+            'after_drop_sparse': int(n_drop),
+            'after_ohe': int(n_ohe),
+            'after_variance': int(n_var),
+            'after_corr': int(n_corr),
+        }
+
+    def _enrich(scope: str, c: Dict[str, int]) -> Dict[str, float]:
+        i = float(c['initial'])
+        d = float(c['after_drop_sparse'])
+        o = float(c['after_ohe'])
+        v = float(c['after_variance'])
+        r = float(c['after_corr'])
+        row = {
+            'scope': scope,
+            **c,
+            'drop_sparse_drop': int(i - d),
+            'drop_sparse_drop_pct_initial': float((i - d) / i if i else 0.0),
+            'ohe_delta': int(o - d),
+            'ohe_delta_pct_prev': float((o - d) / d if d else 0.0),
+            'variance_drop': int(o - v),
+            'variance_drop_pct_prev': float((o - v) / o if o else 0.0),
+            'corr_drop': int(v - r),
+            'corr_drop_pct_prev': float((v - r) / v if v else 0.0),
+            'final_keep_pct_initial': float(r / i if i else 0.0),
+        }
+        return row
+
+    rows: List[Dict[str, float]] = []
+
+    # Global counts on full CV split
+    preproc_global = clone(preprocessor).fit(X_cv, y_cv_log)
+    cg = _counts_from_fitted(preproc_global, n_initial=X_cv.shape[1])
+    rows.append(_enrich('global_cv', cg))
+
+    # Per-outer-fold counts (fit on each outer-train)
+    for fold_id, (i_tr, i_te) in enumerate(outer_splits, start=1):
+        X_tr = X_cv.iloc[i_tr]
+        y_tr_log = y_cv_log.iloc[i_tr]
+        preproc_fold = clone(preprocessor).fit(X_tr, y_tr_log)
+        cf = _counts_from_fitted(preproc_fold, n_initial=X_tr.shape[1])
+        rows.append(_enrich(f'fold_{fold_id}', cf))
+
+    df = pd.DataFrame(rows)
+    df.to_csv(out_csv, index=False)
+
+    fold_df = df[df['scope'].str.startswith('fold_')]
+    summary = {
+        'n_outer_folds': int(len(fold_df)),
+        'global_cv': df[df['scope'] == 'global_cv'].iloc[0].to_dict(),
+        'fold_min': fold_df.drop(columns=['scope']).min(numeric_only=True).to_dict(),
+        'fold_median': fold_df.drop(columns=['scope']).median(numeric_only=True).to_dict(),
+        'fold_max': fold_df.drop(columns=['scope']).max(numeric_only=True).to_dict(),
+    }
+
+    with out_json.open('w', encoding='utf-8') as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+
+    print(f"[Stage counts] Saved: {out_csv}")
+    print(f"[Stage counts] Saved: {out_json}")
+    return df
 
 
 def _rf_estimator(seed: int = SEED, n_estimators: int = RF_N_ESTIM) -> RandomForestRegressor:
@@ -212,7 +307,7 @@ def select_k_per_fold(
                 )
 
                 r2_vals: List[float] = []
-                for i_tr_in, i_va_in in inner_cv.split(X_tr_outer, strata_tr):
+                for i_tr_in, i_va_in in inner_cv.split(X_tr_outer.to_numpy(), strata_tr.to_numpy()):
                     X_in_tr = X_tr_outer.iloc[i_tr_in]
                     X_in_va = X_tr_outer.iloc[i_va_in]
                     y_in_tr_log = y_tr_outer_log.iloc[i_tr_in]

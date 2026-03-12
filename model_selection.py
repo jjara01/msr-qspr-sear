@@ -258,7 +258,7 @@ def run_model_selection(
             n_repeats=2,
             random_state=SEED + fold_id,
         )
-        inner_splits = list(inner_cv.split(X_tr_outer, strata_tr))
+        inner_splits = list(inner_cv.split(X_tr_outer, strata_tr.to_numpy()))
 
         # Loop over candidate models
         for model_name, base_est in estimators.items():

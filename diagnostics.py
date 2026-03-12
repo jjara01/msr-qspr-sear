@@ -11,6 +11,7 @@ import joblib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.markers import MarkerStyle
 import seaborn as sns
 
 from sklearn.base import clone
@@ -116,7 +117,7 @@ def run_y_randomization(
         n_repeats=3,
         random_state=SEED + 1234,
     )
-    inner_splits = list(inner_cv.split(X_cv, strata))
+    inner_splits = list(inner_cv.split(X_cv, strata.to_numpy()))
 
     def cv_median_r2_for_target(y_target: pd.Series) -> float:
         """Compute median R² over inner splits for a given target vector."""
@@ -170,7 +171,7 @@ def run_y_randomization(
     plt.ylabel("Count")
     plt.title(f"Y-randomization – {best_model_name}")
     plt.tight_layout()
-    plt.savefig(fig_path, dpi=300)
+    plt.savefig(str(fig_path), dpi=300)
     plt.close()
     print(f"[Y-rand] Saved histogram → {fig_path.name}")
 
@@ -301,7 +302,7 @@ def run_shap(
             ax.set_ylabel("")
             plt.tight_layout()
 
-        plt.savefig(bar_path)
+        plt.savefig(str(bar_path))
         plt.close()
         print(f"[SHAP] Saved bar summary plot → {bar_path.name}")
 
@@ -318,7 +319,7 @@ def run_shap(
 
             ax =  plt.gca()
             ax.set_xlabel("SHAP value")
-        plt.gcf().savefig(beeswarm_path)
+        plt.gcf().savefig(str(beeswarm_path))
         plt.close()
         print(f"[SHAP] Saved beeswarm plot → {beeswarm_path.name}")
 
@@ -417,7 +418,7 @@ def run_applicability_domain(
     )
 
     y_cv_pred = np.empty_like(y_cv_arr)
-    for itr, iva in skf.split(X_cv_pre, strata):
+    for itr, iva in skf.split(X_cv_pre, strata.to_numpy()):
         m = clone(model).fit(X_cv_pre[itr], y_cv_arr[itr])
         y_cv_pred[iva] = m.predict(X_cv_pre[iva])
 
@@ -590,7 +591,7 @@ def run_applicability_domain(
             edgecolor="black",
             linewidth=0.7,
             zorder=4,
-            marker="o",
+            marker=MarkerStyle("o"),
             label="_nolegend_",         
         )
 
@@ -603,7 +604,7 @@ def run_applicability_domain(
             edgecolor="black",
             linewidth=0.7,
             zorder=4,
-            marker="s",
+            marker=MarkerStyle("s"),
             label="_nolegend_",
         )
 
@@ -631,7 +632,7 @@ def run_applicability_domain(
             right=False,
         )
 
-    fig.savefig(fig_scan_path)
+    fig.savefig(str(fig_scan_path))
     plt.close(fig)
     print(f"[AD] Saved quantile figure → {fig_scan_path.name}")
 
@@ -690,7 +691,7 @@ def run_applicability_domain(
         frameon=False,        
     )
 
-    fig.savefig(fig_dist_path)
+    fig.savefig(str(fig_dist_path))
     plt.close(fig)
     print(f"[AD] Saved distance vs error figure → {fig_dist_path.name}")
 

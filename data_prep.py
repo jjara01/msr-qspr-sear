@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -72,7 +72,10 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
     # Trim to valid index range
     first_idx, last_idx = df.first_valid_index(), df.last_valid_index()
-    df = df.loc[first_idx:last_idx]
+    if first_idx is None or last_idx is None:
+        return df.head(0).copy()
+    # Keep 2D slicing explicit so static checkers infer DataFrame, not Series.
+    df = df.loc[first_idx:last_idx, :].copy()
 
     # Normalize column names
     rename_map = {
@@ -87,13 +90,13 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=rename_map)
 
     # Convert MSR to numeric and keep only valid rows
-    msr_numeric = pd.to_numeric(df["MSR"], errors="coerce")
+    msr_numeric = cast(pd.Series, pd.to_numeric(df["MSR"], errors="coerce"))
     mask_valid = msr_numeric.notna()
-    df = df.loc[mask_valid].copy()
-    df["MSR"] = msr_numeric[mask_valid]
+    df = df.loc[mask_valid, :].copy()
+    df["MSR"] = msr_numeric.loc[mask_valid]
 
      # Ensure MSR > 0 for later log10 transforms
-    msr = pd.to_numeric(df["MSR"], errors="coerce")
+    msr = cast(pd.Series, pd.to_numeric(df["MSR"], errors="coerce"))
     if not (msr > 0).all():
         raise ValueError("MSR contains non-positive values; log10 transform would fail.")
 
@@ -109,8 +112,8 @@ def _save_log10_msr_histogram(
     if "MSR" not in df.columns:
         return
 
-    msr = pd.to_numeric(df["MSR"], errors="coerce")
-    msr = msr[msr > 0]
+    msr = cast(pd.Series, pd.to_numeric(df["MSR"], errors="coerce"))
+    msr = cast(pd.Series, msr.loc[msr > 0])
 
     if msr.empty:
         return
@@ -129,7 +132,7 @@ def _save_log10_msr_histogram(
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     fig.tight_layout()
-    fig.savefig(DATA_FIGURES_DIR / filename)
+    fig.savefig(str(DATA_FIGURES_DIR / filename))
     plt.close(fig)
 
 
@@ -142,16 +145,17 @@ def _save_log10_msr_violin_panels(
     if not required_cols.issubset(df.columns):
         return
 
-    msr = pd.to_numeric(df["MSR"], errors="coerce")
-    mask = msr > 0
-    if not mask.any():
+    msr = cast(pd.Series, pd.to_numeric(df["MSR"], errors="coerce"))
+    mask = cast(pd.Series, msr > 0)
+    if not bool(mask.any()):
         return
 
     df_plot = df.loc[mask, ["ContaminantType", "SurfactantType"]].copy()
     # Normalize categorical labels to avoid hidden spacing artifacts in category alignment.
     df_plot["ContaminantType"] = df_plot["ContaminantType"].astype(str).str.strip()
     df_plot["SurfactantType"] = df_plot["SurfactantType"].astype(str).str.strip()
-    df_plot["log10_MSR"] = np.log10(msr.loc[mask].to_numpy(dtype=float))
+    msr_positive = cast(pd.Series, msr.loc[mask])
+    df_plot["log10_MSR"] = np.log10(msr_positive.to_numpy(dtype=float))
 
     cont_order = (
         df_plot.groupby("ContaminantType")["log10_MSR"].median().sort_values().index.tolist()
@@ -259,7 +263,7 @@ def _save_log10_msr_violin_panels(
             ax.xaxis.grid(False)
 
         fig.subplots_adjust(left=0.07, right=0.98, top=0.97, bottom=0.17, wspace=0.20)
-        fig.savefig(DATA_FIGURES_DIR / filename)
+        fig.savefig(str(DATA_FIGURES_DIR / filename))
         plt.close(fig)
 
 
@@ -293,16 +297,17 @@ def canonical_main_organic_fragment(smiles: str) -> Optional[str]:
         return None
 
     try:
-        mol = Chem.MolFromSmiles(str(smiles))
+        chem = cast(Any, Chem)
+        mol = chem.MolFromSmiles(str(smiles))
         if mol is None:
             return None
 
-        frags = Chem.GetMolFrags(mol, asMols=True)
+        frags = chem.GetMolFrags(mol, asMols=True)
 
         if len(frags) == 1:
-            return Chem.MolToSmiles(frags[0], canonical=True)
+            return cast(str, chem.MolToSmiles(frags[0], canonical=True))
 
-        organic_frags = []
+        organic_frags: list[Any] = []
         for f in frags:
             has_carbon = any(atom.GetAtomicNum() == 6 for atom in f.GetAtoms())
             if has_carbon:
@@ -312,7 +317,7 @@ def canonical_main_organic_fragment(smiles: str) -> Optional[str]:
             organic_frags = frags
 
         main_frag = max(organic_frags, key=lambda m: m.GetNumHeavyAtoms())
-        return Chem.MolToSmiles(main_frag, canonical=True)
+        return cast(str, chem.MolToSmiles(main_frag, canonical=True))
 
     except Exception:
         return None
@@ -343,6 +348,7 @@ def add_descriptors(df_base: pd.DataFrame) -> pd.DataFrame:
     - Concatenate base data with descriptors
     """
     df = df_base.copy()
+    chem = cast(Any, Chem)
     
     # Canonical SMILES
     df["SMILES_contaminant"] = df["SMILES_contaminant"].apply(
@@ -366,8 +372,12 @@ def add_descriptors(df_base: pd.DataFrame) -> pd.DataFrame:
     )
 
     # RDKit Mol objects
-    df["Mol_contaminant"] = df["SMILES_contaminant"].apply(Chem.MolFromSmiles)
-    df["Mol_surfactant"] = df["SMILES_surfactant"].apply(Chem.MolFromSmiles)
+    df["Mol_contaminant"] = df["SMILES_contaminant"].apply(
+        lambda s: chem.MolFromSmiles(s)
+    )
+    df["Mol_surfactant"] = df["SMILES_surfactant"].apply(
+        lambda s: chem.MolFromSmiles(s)
+    )
 
     # Compute descriptors
     desc_contaminant = compute_mordred_descriptors(df["Mol_contaminant"], "Cont_")

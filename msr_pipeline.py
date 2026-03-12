@@ -4,6 +4,7 @@ from data_prep import prepare_full_dataframe
 from split_preproc import create_cv_holdout_split, build_preprocessor
 from feature_selection import (
     make_outer_cv_splits,
+    export_stage_counts,
     run_feature_stability,
     select_k_per_fold,
     build_final_feature_set,
@@ -44,6 +45,15 @@ def main() -> None:
     outer_splits = make_outer_cv_splits(split["X_cv"], split["bins_cv"])
     print(f"\n[Outer CV] Number of folds: {len(outer_splits)}\n")
 
+
+    # Stage-wise feature counts (quick diagnostics for reporting)
+    export_stage_counts(
+        X_cv=split["X_cv"],
+        y_cv_log=split["y_cv_log"],
+        preprocessor=preprocessor,
+        outer_splits=outer_splits,
+        force_recompute=FORCE_RECOMPUTE["feature_stability"],
+    )
 
     # Stability rankings per outer fold
     run_feature_stability(

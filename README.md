@@ -53,6 +53,7 @@ Main layout:
 ├── plot_style.py
 ├── msr_pipeline.py
 ├── requirements.txt
+├── environment.msr-conda-env.yml
 └── README.md
 ```
 
@@ -104,32 +105,21 @@ The code was developed and tested with:
 - `openpyxl==3.1.2`
 - `matplotlib`, `seaborn`, `optuna` and related dependencies
 
-Typical setup:
+Setup (choose one path):
 
 ```bash
-# create and activate a virtual environment (example with venv)
-python3.9 -m venv venv
-source venv/bin/activate    # on Windows: venv\Scripts\activate
+# conda (recommended)
+conda env create -f environment.msr-conda-env.yml
+conda activate msr-conda-env
 
-# install dependencies
-pip install -r requirements.txt
+# venv (fallback)
+python3.9 -m venv .venv
+source .venv/bin/activate    # on Windows: .venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
 Due to Mordred, using Python 3.9 (or the exact versions listed in `requirements.txt`) is necessary for reproducibility.
-
-### Reproducibility quickstart (fresh environment)
-
-For the most reproducible run, start from a clean virtual environment and reinstall dependencies:
-
-```bash
-# from project root
-rm -rf .venv
-python3.9 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-python msr_pipeline.py
-```
 
 If you want to force recomputation of specific stages instead of reusing cached artifacts,
 set the corresponding keys in `FORCE_RECOMPUTE` in `config.py` to `True`.

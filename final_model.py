@@ -175,7 +175,7 @@ def train_final_model(
             n_repeats=3,
             random_state=SEED + 999,
         )
-        inner_splits = list(inner_cv.split(X_cv, strata))
+        inner_splits = list(inner_cv.split(X_cv, strata.to_numpy()))
 
         model_pipe = _build_model_pipeline_for_fold(
             estimator=base_est,
