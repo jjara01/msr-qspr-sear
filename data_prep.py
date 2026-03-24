@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+import time
 from typing import Any, Optional, Protocol, cast
 
 import numpy as np
@@ -329,11 +331,61 @@ def compute_mordred_descriptors(molecules: pd.Series, prefix: str) -> pd.DataFra
 
     Returns a numeric DataFrame with the given prefix applied to column names.
     """
-    dfx = MORDRED_CALC.pandas(molecules, quiet=True)
+    nproc_env = os.getenv("MORDRED_NPROC")
+    nproc = 1
+    if nproc_env is not None:
+        try:
+            parsed = int(nproc_env)
+            if parsed > 0:
+                nproc = parsed
+        except ValueError:
+            pass
+
+    dfx = MORDRED_CALC.pandas(molecules, nproc=nproc, quiet=True)
     dfx = dfx.add_prefix(prefix)
     dfx = dfx.apply(pd.to_numeric, errors="coerce")
 
     return dfx
+
+
+def compute_mordred_descriptors_from_smiles(
+    smiles: pd.Series,
+    prefix: str,
+    label: str,
+) -> pd.DataFrame:
+    """
+    Compute descriptors once per unique canonical SMILES and map back to rows.
+
+    This avoids recomputing identical molecules many times.
+    """
+    chem = cast(Any, Chem)
+
+    unique_smiles = pd.Index(pd.unique(smiles.dropna()))
+    print(
+        f"[DataPrep] Mordred ({label}): "
+        f"{len(unique_smiles)} unique molecules across {len(smiles)} rows."
+    )
+
+    unique_mols = pd.Series(
+        [chem.MolFromSmiles(str(s)) for s in unique_smiles],
+        index=unique_smiles,
+        dtype=object,
+    )
+
+    valid_mask = unique_mols.notna()
+    n_invalid_unique = int((~valid_mask).sum())
+    if n_invalid_unique:
+        print(f"[DataPrep] {label}: {n_invalid_unique} unique canonical SMILES failed RDKit parsing.")
+
+    t0 = time.perf_counter()
+    desc_valid = compute_mordred_descriptors(unique_mols.loc[valid_mask].reset_index(drop=True), prefix)
+    elapsed = time.perf_counter() - t0
+    print(f"[DataPrep] Mordred ({label}) finished in {elapsed:.1f}s")
+
+    desc_valid.index = unique_smiles[valid_mask]
+    desc_unique = desc_valid.reindex(unique_smiles)
+    desc_all = desc_unique.reindex(smiles.to_numpy()).reset_index(drop=True)
+    return desc_all
 
 
 def add_descriptors(df_base: pd.DataFrame) -> pd.DataFrame:
@@ -371,25 +423,22 @@ def add_descriptors(df_base: pd.DataFrame) -> pd.DataFrame:
         drop=True
     )
 
-    # RDKit Mol objects
-    df["Mol_contaminant"] = df["SMILES_contaminant"].apply(
-        lambda s: chem.MolFromSmiles(s)
+    # Compute descriptors from unique canonical SMILES and map back to rows.
+    desc_contaminant = compute_mordred_descriptors_from_smiles(
+        df["SMILES_contaminant"],
+        "Cont_",
+        "contaminant",
     )
-    df["Mol_surfactant"] = df["SMILES_surfactant"].apply(
-        lambda s: chem.MolFromSmiles(s)
+    desc_surfactant = compute_mordred_descriptors_from_smiles(
+        df["SMILES_surfactant"],
+        "Surf_",
+        "surfactant",
     )
-
-    # Compute descriptors
-    desc_contaminant = compute_mordred_descriptors(df["Mol_contaminant"], "Cont_")
-    desc_surfactant = compute_mordred_descriptors(df["Mol_surfactant"], "Surf_")
-
-    # Drop helper Mol columns
-    df_base_clean = df.drop(columns=["Mol_contaminant", "Mol_surfactant"])
 
     # Merge base data with descriptors
     df_full = pd.concat(
         [
-            df_base_clean.reset_index(drop=True),
+            df.reset_index(drop=True),
             desc_contaminant.reset_index(drop=True),
             desc_surfactant.reset_index(drop=True),
         ],

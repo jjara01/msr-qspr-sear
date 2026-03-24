@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# App-specific
+streamlit==1.30.0
+plotly==5.18.0
+Pillow==9.5.0

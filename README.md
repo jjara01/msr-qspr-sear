@@ -1,6 +1,8 @@
-# QSPR pipeline for predicting molar solubilization ratio (MSR)
+# Machine-learning QSPR modeling of molar solubilization ratios for surfactant-enhanced aquifer remediation
 
-This repository contains a fully reproducible machine-learning pipeline to build and analyze QSPR models for the **molar solubilization ratio (MSR)** of contaminant–surfactant systems used in surfactant-enhanced remediation.
+This repository contains a fully reproducible machine-learning pipeline to build and analyze QSPR models for the **molar solubilization ratio (MSR)** of contaminant–surfactant systems used in surfactant-enhanced remediation, including an interactive web app.
+
+![alt text](app/appgif.gif)
 
 The code:
 
@@ -9,9 +11,11 @@ The code:
 - performs **feature stability analysis** and selection,
 - runs **nested cross-validation** for model comparison and hyperparameter tuning,
 - trains a **final model** on the full CV set and evaluates it on a holdout set,
-- generates **diagnostics** (Y-randomization and SHAP).
+- generates **diagnostics** (Y-randomization, SHAP, and applicability domain).
 
 All modeling is done on log10(MSR); metrics and plots are reported in this scale.
+
+
 
 ---
 
@@ -52,8 +56,18 @@ Main layout:
 ├── transformers.py
 ├── plot_style.py
 ├── msr_pipeline.py
+├── streamlit_app.py              # web app entry point
+├── app_core.py                   # prediction engine used by   the app
+├── app/
+│   ├── styles.py                 # CSS and JS injection
+│   ├── charts.py                 # Plotly chart factories
+│   ├── components.py             # molecule rendering, modals, UI helpers
+│   └── pages.py                  # welcome screen, prediction tabs, layout
 ├── requirements.txt
+├── requirements_app.txt          # additional dependencies for the app
 ├── environment.msr-conda-env.yml
+├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
@@ -204,6 +218,11 @@ The script performs the complete workflow:
      - compute SHAP values for the final model,
      - save global importance (mean |SHAP| per feature),
      - export bar plot and beeswarm plot using the project’s seaborn/matplotlib style.
+   - **Applicability domain (AD)**:
+     - assess structural coverage (k-NN distance to training set),
+     - check y-range (prediction within observed target range),
+     - estimate local prediction error (median error of nearest neighbors),
+     - flag out-of-domain predictions and save AD results.
 
 Stage-level cache bypass (recompute) behavior is controlled centrally in
 `config.py` via the `FORCE_RECOMPUTE` dictionary.
@@ -221,10 +240,49 @@ Given the same Python version, dependencies, raw Excel file and configuration, t
 
 ---
 
-## 6. Citation
+## 6. Streamlit web app (optional)
+
+This repository includes an interactive Streamlit interface for MSR prediction:
+
+- App entry point: `streamlit_app.py`
+- Core predictor module: `app_core.py`
+
+### 6.1 App environment
+
+From repository root:
+
+```bash
+python3.9 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements_app.txt
+```
+
+### 6.2 Required artifacts
+
+The app expects these files under `artifacts/` (or a directory set with `MSR_ARTIFACTS_DIR`):
+
+- `final_model/models/xgboost_final_model.joblib`
+- `data/full_dataset_with_descriptors.pkl`
+
+If they are missing, run:
+
+```bash
+python msr_pipeline.py
+```
+
+### 6.3 Run app
+
+```bash
+streamlit run streamlit_app.py
+```
+
+## 7. Citation
 
 If you use this model in your research, please cite:
 
-## 7. License
+(Full citation with DOI will be added after publication.)
+
+## 8. License
 
 This repository is released under the MIT License. See the `LICENSE` file for details.
