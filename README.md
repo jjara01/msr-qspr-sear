@@ -1,5 +1,7 @@
 # Machine-learning QSPR modeling of molar solubilization ratios for surfactant-enhanced aquifer remediation
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19207310.svg)](https://doi.org/10.5281/zenodo.19207310)
+
 This repository contains a fully reproducible machine-learning pipeline to build and analyze QSPR models for the **molar solubilization ratio (MSR)** of contaminant–surfactant systems used in surfactant-enhanced remediation, including an interactive web app.
 
 ![alt text](app/appgif.gif)
@@ -281,7 +283,11 @@ streamlit run streamlit_app.py
 
 If you use this model in your research, please cite:
 
-(Full citation with DOI will be added after publication.)
+**Paper:** Jara-Elizeche, J.M., Santos, A., Romero, A., Lorenzo, D. (2026). Machine-learning QSPR modeling of molar solubilization ratios for surfactant-enhanced aquifer remediation. (Full citation with journal DOI will be added after publication.)
+
+**Code and data:** https://doi.org/10.5281/zenodo.19207310
+
+
 
 ## 8. License
 
