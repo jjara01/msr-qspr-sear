@@ -51,6 +51,10 @@ def set_plot_style() -> None:
             "mathtext.fontset": "dejavusans",   # o "dejavusans"
             "mathtext.default": "regular",
 
+            # PDF/PS font embedding
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+
             # Axes and lines
             "axes.labelpad": 10,
             "axes.linewidth": 0.8,
