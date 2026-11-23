@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this software or its data, please cite it as below."
+title: "msr-qspr: grouped QSPR modeling of molar solubilization ratios for surfactant screening"
+type: software
+version: 1.0.0
+license: MIT
+# date-released: "YYYY-MM-DD"  # set on release
+# doi: "10.5281/zenodo.XXXXXXX"  # add when Zenodo issues it
+abstract: >-
+  msr-qspr predicts the molar solubilization ratio (MSR) of hydrophobic organic
+  contaminants in aqueous surfactant solutions for preliminary surfactant
+  screening in surfactant-enhanced aquifer remediation. It compares QSPR
+  procedures under grouped, leakage-safe validation and provides model
+  selection, applicability assessment, interpretation, target randomization,
+  holdout evaluation, surfactant screening and a local prediction application.
+repository-code: "https://github.com/jjara01/msr-qspr-sear"
+authors:
+  - family-names: Jara-Elizeche
+    given-names: Juan M.
+    affiliation: "Complutense University of Madrid"
+    orcid: "https://orcid.org/0009-0009-8466-6531"
+  - family-names: Santos
+    given-names: Aurora
+    affiliation: "Complutense University of Madrid"
+    orcid: "https://orcid.org/0000-0002-7804-5677"
+  - family-names: Romero
+    given-names: Arturo
+    affiliation: "Complutense University of Madrid"
+    orcid: "https://orcid.org/0000-0002-3897-5896"
+  - family-names: Lorenzo
+    given-names: David
+    affiliation: "Complutense University of Madrid"
+    orcid: "https://orcid.org/0000-0002-4235-9308"
+keywords:
+  - QSPR
+  - molar solubilization ratio
+  - surfactant-enhanced aquifer remediation
+  - machine learning

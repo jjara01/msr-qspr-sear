@@ -1,0 +1,14 @@
+name: msr-qspr
+
+channels:
+  - defaults
+  - nodefaults
+
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - "-r requirements.txt"
+
+variables:
+  PYTHONNOUSERSITE: "1"

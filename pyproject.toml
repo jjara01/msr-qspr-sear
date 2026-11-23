@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "msr-qspr"
+version = "1.0.0"
+description = "Grouped, leakage-safe QSPR modeling of molar solubilization ratios for surfactant screening"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = {text = "MIT"}
+authors = [
+    {name = "Juan M. Jara-Elizeche", email = "jjara01@ucm.es"},
+    {name = "Aurora Santos"},
+    {name = "Arturo Romero"},
+    {name = "David Lorenzo"},
+]
+keywords = ["QSPR", "molar solubilization ratio", "surfactant", "aquifer remediation", "machine learning"]
+dynamic = ["dependencies"]
+
+[project.scripts]
+msr-qspr = "msr_qspr.__main__:cli"
+
+[tool.setuptools]
+py-modules = []
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["msr_qspr*"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.in"]}
