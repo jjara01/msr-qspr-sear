@@ -4,8 +4,8 @@ title: "msr-qspr: grouped QSPR modeling of molar solubilization ratios for surfa
 type: software
 version: 1.0.0
 license: MIT
-# date-released: "YYYY-MM-DD"  # set on release
-# doi: "10.5281/zenodo.XXXXXXX"  # add when Zenodo issues it
+date-released: "2026-11-23"
+doi: "10.5281/zenodo.24464886"
 abstract: >-
   msr-qspr predicts the molar solubilization ratio (MSR) of hydrophobic organic
   contaminants in aqueous surfactant solutions for preliminary surfactant

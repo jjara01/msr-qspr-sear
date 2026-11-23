@@ -1,9 +1,6 @@
 # msr-qspr
 
-<!-- Replace the placeholders once the identifiers exist:
-     Zenodo:  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
-     Article: [![Article](https://img.shields.io/badge/article-10.xxxx%2Fxxxxx-blue)](https://doi.org/10.xxxx/xxxxx) -->
-[![DOI](https://img.shields.io/badge/DOI-pending-lightgrey)](https://zenodo.org/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24464885.svg)](https://doi.org/10.5281/zenodo.24464885)
 [![Article](https://img.shields.io/badge/article-pending-lightgrey)](#)
 [![License: MIT](https://img.shields.io/badge/code-MIT-yellow.svg)](LICENSE)
 [![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-lightblue.svg)](data/LICENSE.md)
@@ -246,8 +243,9 @@ without fitting using `python -m msr_qspr progress`. Every stage accepts
 
 ## Citation
 
-If you use this software or its data, please cite the associated article (details
-will be added on publication) and this repository (see `CITATION.cff`).
+If you use this software or its data, please cite the [software release](https://doi.org/10.5281/zenodo.24464886),
+the [study outputs](https://doi.org/10.5281/zenodo.24463237) when used, and the
+associated article when published (see `CITATION.cff`).
 
 ## License
 
