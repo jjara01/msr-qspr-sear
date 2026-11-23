@@ -150,8 +150,8 @@ only, and the command exits with a nonzero code if any output cannot be built.
 ## Prediction and screening
 
 The application and `screen` need a fitted prediction bundle. Fit one with the
-workflow above, or use the study outputs, which will be archived on Zenodo with
-the release (DOI pending): extract the archive as `artifacts/` in the repository
+workflow above, or use the [published study outputs](https://doi.org/10.5281/zenodo.24463237):
+extract the archive as `artifacts/` in the repository
 root, then start the local prediction application:
 
 ```bash
